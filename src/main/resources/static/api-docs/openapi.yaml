@@ -1,0 +1,230 @@
+openapi: 3.0.3
+info:
+  title: 古典诗词API
+  description: 中华古典诗词检索系统
+  version: 1.0.0
+  contact:
+    name: 开发团队
+    url: https://example.com
+
+tags:
+  - name: 诗词接口
+    description: 古典诗词查询接口
+
+paths:
+  /api/poetry/random:
+    get:
+      tags: [诗词接口]
+      summary: 随机获取诗词
+      description: 从数据库中随机获取一首诗词的完整信息
+      responses:
+        '200':
+          description: 成功获取诗词
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoetryResponse'
+              example:
+                id: "5f8d8b9c3d5f4d2b1c6e5a7f"
+                title: "静夜思"
+                dynasty: "唐"
+                author: "李白"
+                sourceLink: "https://example.com/poem/123"
+                type: "五言绝句"
+                format: "古诗"
+                updateAt: "2023-08-01T12:00:00Z"
+                contents: ["床前明月光，疑是地上霜。", "举头望明月，低头思故乡。"]
+                translations:
+                  - text: "Moonlight before my bed...",
+                    source: "许渊冲译"
+                tags: ["思乡", "月亮"]
+                notes: ["此诗写于开元十四年..."]
+                appreciations: ["这首小诗既没有..."]
+        '404':
+          description: 没有找到诗词
+
+  /api/poetry/{id}:
+    get:
+      tags: [诗词接口]
+      summary: 根据ID获取诗词
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "5f8d8b9c3d5f4d2b1c6e5a7f"
+      responses:
+        '200':
+          description: 成功获取诗词详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoetryResponse'
+        '404':
+          description: 诗词不存在
+
+  /api/poetry/search/title:
+    get:
+      tags: [诗词接口]
+      summary: 按标题搜索
+      parameters:
+        - name: title
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "静夜"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: 页码（从0开始）
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: 每页数量
+      responses:
+        '200':
+          description: 分页搜索结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoetryPage'
+
+  /api/poetry/search/author:
+    get:
+      tags: [诗词接口]
+      summary: 按作者搜索
+      parameters:
+        - name: author
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "李白"
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          $ref: '#/components/responses/PoetryPageResponse'
+
+  # 其他端点类似结构...
+
+components:
+  schemas:
+    PoetryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 诗词唯一标识
+        title:
+          type: string
+          description: 诗词标题
+        dynasty:
+          type: string
+          description: 朝代
+        author:
+          type: string
+          description: 作者
+        sourceLink:
+          type: string
+          nullable: true
+          description: 原始出处链接
+        type:
+          type: string
+          description: 诗词类型（如五言绝句）
+        format:
+          type: string
+          description: 格式（如古诗、词牌等）
+        updateAt:
+          type: string
+          format: date-time
+          description: 最后更新时间
+        contents:
+          type: array
+          items:
+            type: string
+          description: 诗词正文分句
+        translations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Translation'
+          description: 译文列表
+        tags:
+          type: array
+          items:
+            type: string
+          description: 标签列表
+        notes:
+          type: array
+          items:
+            type: string
+          description: 注释列表
+        appreciations:
+          type: array
+          items:
+            type: string
+          description: 赏析列表
+
+    Translation:
+      type: object
+      properties:
+        text:
+          type: string
+          description: 译文内容
+        source:
+          type: string
+          description: 译文来源
+
+    PoetryPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoetryResponse'
+        pageable:
+          type: object
+          properties:
+            pageNumber:
+              type: integer
+            pageSize:
+              type: integer
+        totalElements:
+          type: integer
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: 页码（从0开始）
+
+    SizeParam:
+      name: size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+      description: 每页数量
+
+  responses:
+    PoetryPageResponse:
+      description: 分页搜索结果
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PoetryPage'
